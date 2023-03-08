@@ -157,3 +157,5 @@ as result app is dependent on db pod,result app Stopped working as it couldn't s
 as soon as db pod came up running, result pod was able to capture inputs from vote-app, apply changes accordingly.So, result pod is dependent on db-pod and
 db-pod captures inputs from vote-pod /vote-app.
 
+
+Note: please let me know if anything is missing, this activity was done with best of my knowledge.
