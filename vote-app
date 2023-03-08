@@ -1,0 +1,159 @@
+Vote-App Observations:
+
+1. Deleting the Voting-pod:
+   kubectl get pods -n master
+    NAME                      READY   STATUS    RESTARTS   AGE
+    db-b54cd94f4-b8q7x        1/1     Running   0          29m
+    redis-868d64d78-jvdf5     1/1     Running   0          29m
+    result-5d57b59f4b-88lgf   1/1     Running   0          29m
+    vote-94849dc97-brsbc      1/1     Running   0          29m
+    worker-dd46d7584-zq5hb    1/1     Running   0          29m
+
+   kubectl delete pods -n master vote-94849dc97-brsbc
+    pod "vote-94849dc97-brsbc" deleted
+
+   kubectl get pods -n master
+NAME                      READY   STATUS    RESTARTS   AGE
+db-b54cd94f4-b8q7x        1/1     Running   0          31m
+redis-868d64d78-jvdf5     1/1     Running   0          31m
+result-5d57b59f4b-88lgf   1/1     Running   0          31m
+vote-94849dc97-lgs22      1/1     Running   0          37s
+worker-dd46d7584-zq5hb    1/1     Running   0          31m
+
+observations: NO errors found... working fine with new pod.
+logs in Vote-pod:
+[2023-03-08 14:14:15 +0000] [1] [INFO] Handling signal: term
+[2023-03-08 14:14:15 +0000] [7] [INFO] Worker exiting (pid: 7)
+[2023-03-08 14:14:15 +0000] [8] [INFO] Worker exiting (pid: 8)
+[2023-03-08 14:14:15 +0000] [9] [INFO] Worker exiting (pid: 9)
+[2023-03-08 14:14:15 +0000] [10] [INFO] Worker exiting (pid: 10)
+[2023-03-08 14:14:15 +0000] [1] [INFO] Shutting down: Master
+rpc error: code = Unknown desc = Error: No such container: 8c12e2cd8375e52df955372610d1503e3d4d70c9ad5f57a0884f7b0c8388f223[root@ip-172-31-15-49 ~]#
+
+2. Deleting the worker-pod:
+kubectl get pods -n master
+NAME                      READY   STATUS    RESTARTS   AGE
+db-b54cd94f4-b8q7x        1/1     Running   0          31m
+redis-868d64d78-jvdf5     1/1     Running   0          31m
+result-5d57b59f4b-88lgf   1/1     Running   0          31m
+vote-94849dc97-lgs22      1/1     Running   0          39s
+worker-dd46d7584-zq5hb    1/1     Running   0          31m
+
+kubectl delete pods -n master worker-dd46d7584-zq5hb
+pod "worker-dd46d7584-zq5hb" deleted
+
+ kubectl get pods -n master
+NAME                      READY   STATUS    RESTARTS   AGE
+db-b54cd94f4-b8q7x        1/1     Running   0          36m
+redis-868d64d78-jvdf5     1/1     Running   0          36m
+result-5d57b59f4b-88lgf   1/1     Running   0          36m
+vote-94849dc97-lgs22      1/1     Running   0          5m36s
+worker-dd46d7584-4wqrx    1/1     Running   0          4s
+
+observations: NO errors found... working fine with new pod.
+
+3. Deleting the Db-pod:
+kubectl get pods -n master
+NAME                      READY   STATUS    RESTARTS   AGE
+db-b54cd94f4-b8q7x        1/1     Running   0          36m
+redis-868d64d78-jvdf5     1/1     Running   0          36m
+result-5d57b59f4b-88lgf   1/1     Running   0          36m
+vote-94849dc97-lgs22      1/1     Running   0          5m36s
+worker-dd46d7584-4wqrx    1/1     Running   0          4s
+
+kubectl delete pods -n master db-b54cd94f4-b8q7x
+pod "db-b54cd94f4-b8q7x" deleted
+
+kubectl get pods -n master
+NAME                      READY   STATUS    RESTARTS   AGE
+db-b54cd94f4-958x7        1/1     Running   0          83s
+redis-868d64d78-jvdf5     1/1     Running   0          44m
+result-5d57b59f4b-88lgf   1/1     Running   1          44m
+vote-94849dc97-lgs22      1/1     Running   0          13m
+worker-dd46d7584-4wqrx    1/1     Running   1          8m15s
+
+observations: As Db pod is attached to result-page, taking time to update results in result-page (delay apprx. 10-20s) and
+result and worker pods restarted because Db pod deleted. result page didn't capture the input.
+  
+logs of worker:
+ kubectl logs -f -n master worker-dd46d7584-4wqrx
+Connected to db
+Found redis at 10.96.187.192
+Connecting to redis
+Processing vote for 'b' by '9d42769717fdf70'
+Processing vote for 'a' by '9d42769717fdf70'
+Processing vote for 'b' by '9d42769717fdf70'
+Processing vote for 'a' by '9d42769717fdf70'
+Processing vote for 'b' by '9d42769717fdf70'
+Processing vote for 'a' by '9d42769717fdf70'
+Processing vote for 'b' by '9d42769717fdf70'
+Processing vote for 'a' by '9d42769717fdf70'
+Processing vote for 'b' by '9d42769717fdf70'
+Npgsql.NpgsqlException (0x80004005): Exception while reading from stream
+ ---> System.IO.EndOfStreamException: Attempted to read past the end of the stream.
+   at Npgsql.NpgsqlReadBuffer.<>c__DisplayClass30_0.<<Ensure>g__EnsureLong|0>d.MoveNext()
+   at Npgsql.NpgsqlReadBuffer.<>c__DisplayClass30_0.<<Ensure>g__EnsureLong|0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Npgsql.NpgsqlConnector.<>c__DisplayClass160_0.<<DoReadMessage>g__ReadMessageLong|0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming)
+   at Npgsql.NpgsqlDataReader.NextResult()
+   at Npgsql.NpgsqlCommand.ExecuteReaderAsync(CommandBehavior behavior, Boolean async, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery()
+   at Worker.Program.Main(String[] args) in /source/Program.cs:line 58
+
+
+4. Deleting the redis-pod:
+kubectl get pods -n master
+NAME                      READY   STATUS    RESTARTS   AGE
+db-b54cd94f4-958x7        1/1     Running   0          83s
+redis-868d64d78-jvdf5     1/1     Running   0          44m
+result-5d57b59f4b-88lgf   1/1     Running   1          44m
+vote-94849dc97-lgs22      1/1     Running   0          13m
+worker-dd46d7584-4wqrx    1/1     Running   1          8m15s
+
+kubectl delete pods -n master redis-868d64d78-jvdf5
+pod "redis-868d64d78-jvdf5" deleted
+
+kubectl get pods -n master
+NAME                      READY   STATUS    RESTARTS   AGE
+db-b54cd94f4-dwdmh        1/1     Running   0          4m43s
+redis-868d64d78-66bwl     1/1     Running   0          34s
+result-5d57b59f4b-88lgf   1/1     Running   2          58m
+vote-94849dc97-lgs22      1/1     Running   0          27m
+worker-dd46d7584-4wqrx    1/1     Running   2          22m
+
+observations: As Redis pod is attached to vote-page, taking time to update results in vote-page (delay apprx. 10-20s) and
+result and worker pods restarted because redis pod deleted. vote page didn't capture the input.
+
+logs of worker:
+Connected to db
+Found redis at 10.96.187.192
+Connecting to redis
+Processing vote for 'b' by '9d42769717fdf70'
+Connecting to redis
+Reconnecting Redis
+Found redis at 10.96.187.192
+Waiting for redis
+Connecting to redis
+Processing vote for 'a' by '9d42769717fdf70'
+Processing vote for 'b' by '9d42769717fdf70'
+Processing vote for 'a' by '9d42769717fdf70'
+Processing vote for 'b' by '9d42769717fdf70'
+Reconnecting Redis
+Connecting to redis
+Found redis at 10.96.187.192
+Waiting for redis
+Connecting to redis
+Processing vote for 'a' by '9d42769717fdf70'
+Processing vote for 'b' by '9d42769717fdf70'
+
+
+5. your comment on WHY result app STOPPED working after db pod stop
+as result app is dependent on db pod,result app Stopped working as it couldn't sync-up with vote pod/app or couldn't capture input from vote-pod/app.
+
+6. your answer to HOW YOU MADE THE RESULT POD work. 
+as soon as db pod came up running, result pod was able to capture inputs from vote-app, apply changes accordingly.So, result pod is dependent on db-pod and
+db-pod captures inputs from vote-pod /vote-app.
+
